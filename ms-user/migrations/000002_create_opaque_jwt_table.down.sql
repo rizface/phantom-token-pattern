@@ -1,0 +1,1 @@
+drop table if exists opaque_jwt_token;

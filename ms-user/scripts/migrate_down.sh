@@ -1,0 +1,1 @@
+migrate -database "postgres://postgres:postgres@localhost:5433/ms-user?sslmode=disable" -path ./migrations down

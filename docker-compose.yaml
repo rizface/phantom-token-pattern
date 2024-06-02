@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  phantom-pg:
+    container_name: phantom-pg
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ms-user
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "ms-user"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  phantom-ms-user:
+    container_name: phantom-ms-user
+    build: 
+      context: "./ms-user"
+      dockerfile: "Dockerfile"
+    ports:
+      - "8001:8000"
+    environment:
+      - PHANTOM_DB_HOST=phantom-pg
+      - PHANTON_DB_PORT=5432
+      - PHANTOM_DB_USER=postgres
+      - PHANTOM_DB_PASSWORD=postgres
+      - PHANTOM_DB_NAME=ms-user
+    depends_on:
+      phantom-pg:
+        condition: service_healthy
+  phantom-ms-post:
+    container_name: phantom-ms-post
+    build: 
+      context: "./ms-post"
+      dockerfile: "Dockerfile"
+    ports:
+      - "8002:8000"
+    environment:
+      - PHANTOM_DB_HOST=phantom-pg
+      - PHANTON_DB_PORT=5432
+      - PHANTOM_DB_USER=postgres
+      - PHANTOM_DB_PASSWORD=postgres
+      - PHANTOM_DB_NAME=ms-post
+  nginx:
+    image: nginx
+    container_name: phantom-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - "./nginx.conf:/etc/nginx/nginx.conf"
+    depends_on:
+      phantom-ms-user:
+        condition: service_started
+      phantom-ms-post:
+        condition: service_started
+      
+    
